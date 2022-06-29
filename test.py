@@ -2,7 +2,7 @@ import unittest
 from AbstractSudoku import AbstractSudoku
 
 # Test methods in LogicPuzzle
-class AbstractTypesTest(unittest.TestCase):
+class AbstractSudokuTest(unittest.TestCase):
     
     def test_solve_cell(self):
         dim = 9
@@ -100,7 +100,22 @@ class AbstractTypesTest(unittest.TestCase):
                 assert( puzzle.possible[0,i] == set( [ 3,4,5,6,7,8,9 ] ) )
 
     def test_N_of_N_possibilities(self):
-        pass
+        dim = 9
+        puzzle = AbstractSudoku(dimension=dim)
+        group = puzzle.groups["row"][0]
+
+        puzzle.possible[0,0] = set([1,2])
+        puzzle.possible[0,4] = set([1,2])
+        puzzle.N_of_N_possibilities(group)
+
+        for coord in group["coords"]:
+            x,y = coord
+            if coord == (0,0) or coord == (4,0):
+                assert( puzzle.possible[y,x] == set([1,2]) )
+            else:
+                assert( len( puzzle.possible[y,x] ) == 7 )
+                assert( not 1 in puzzle.possible[y,x] )
+                assert( not 2 in puzzle.possible[y,x] )
 
     def test_get_possibility_coords(self):
         dim = 9
@@ -178,6 +193,26 @@ class AbstractTypesTest(unittest.TestCase):
                 assert( not (5,0) in coord_sets[val] )
             else:
                 assert( len( coord_sets[val] ) == 9 )
+
+    def test_remove_from_complement(self):
+        dim = 9
+        values = set([ i+1 for i in range(dim) ])
+        puzzle = AbstractSudoku(dimension=dim)
+        group = puzzle.groups["row"][0]
+
+        puzzle.remove_from_complement( group, [(0,0),(4,0)], [1,2] )
+
+        for coord in group["coords"]:
+            x,y = coord
+            if coord == (0,0) or coord == (4,0):
+                assert( puzzle.possible[y,x] == values )
+            else:
+                assert( len( puzzle.possible[y,x] ) == 7 )
+                assert( not 1 in puzzle.possible[y,x] )
+                assert( not 2 in puzzle.possible[y,x] )
+
+class RelationalSudokuTest(unittest.TestCase):
+    pass
 
 if __name__ == "__main__":
     unittest.main()

@@ -4,11 +4,16 @@ import itertools
 
 class AbstractSudoku:
     def __init__(self, dimension=9):
+        self.initialize_sudoku(dimension)
+        
+    ##### SETUP FUNCTIONS ######################################
+        
+    def initialize_sudoku(self, dimension):
         self.dim = dimension
         self.values = [ i+1 for i in range(self.dim) ]
         
         # Grids for the puzzle itself
-        self.grid = np.zeros( (self.dim, self.dim) )
+        self.grid = np.zeros( (self.dim, self.dim) ).astype(int)
         self.solved = np.zeros( (self.dim, self.dim) ).astype(bool)
         self.possible = np.repeat( None, self.dim*self.dim ).reshape( (self.dim, self.dim) )
         self.set_possibilities()
@@ -16,9 +21,7 @@ class AbstractSudoku:
         # Groups for things like rows, columns, subgrids, etc
         self.groups = {}
         self.set_groups()
-        
-    ##### SETUP FUNCTIONS ######################################
-        
+
     def set_possibilities(self):
         for i in range(self.dim):
             for j in range(self.dim):
@@ -46,7 +49,23 @@ class AbstractSudoku:
             group["properties"] = {}
             
             self.groups["column"].append( group )
-        
+
+    # Load grid with pre-solved cells
+    # This function does not read a grid from a file, but turns a read grid into a puzzle
+    def load_grid(self, grid):
+        self.initialize_sudoku( len(grid) )
+
+        for i in range(self.dim):
+            for j in range(self.dim):
+                if grid[j,i] in self.values:
+                    self.solve_cell( (i,j), grid[j,i] )
+    
+    # Reads a CSV sudoku puzzle where blank spots are 0
+    # Reads it and turns it into a numerical grid
+    def read_grid_from_csv(self, f_name):
+        grid = np.array( pd.read_csv( f_name, header=None, index_col=None ) )
+        return grid
+
     ##### SOLVE FUNCTIONS ######################################
         
     def solve_cell(self, coord, value):
@@ -79,12 +98,18 @@ class AbstractSudoku:
             # Solve cells with only one possibility remaining
             self.solve_cell( coord, self.possible[y, x].pop() )
     
+    # Given a group, if N values appear only in the same N sets as possibilities,
+    # Remove other values from those possibilities
+    # Params:
+    #   group               -> Group of cells
+    # Returns:
+    #   None                -> This function alters the cells in the group
     def N_of_N_counts(self, group):
-        unsolved = self.solved_in_group( group )
+        unsolved = len(group["coords"]) - self.solved_in_group( group )
         coord_sets, frequencies = self.get_frequencies( group )
 
         for freq in frequencies:
-            if freq >= ( len(group["coords"]) - unsolved ):
+            if freq >= unsolved:
                 continue
 
             for values in itertools.combinations( frequencies[freq], freq ):
@@ -112,9 +137,37 @@ class AbstractSudoku:
                             for val in values:
                                 self.remove_possibility( coord, val )
 
-        
+    # Similar to N_of_N_counts, but distinct
+    # If N of the cells in the group only have the same N possibilities,
+    # Remove those possibilities from other cells
+    # Different from N_of_N_counts because the possibilities in these cells may appear elsewhere in the group
+    # e.g. if two cells only have set([1,2]) as possibilities, but 1 appears in all other cells and 2 appears in three more,
+    # they have different frequencies and will not be handled by N_of_N_counts but will be handled here
+    # Params:
+    #   group               -> Group of cells
+    # Returns:
+    #   None                -> This function alters the cells in the group
     def N_of_N_possibilities(self, group):
-        pass
+        
+        unsolved = len(group) - self.solved_in_group(group)
+
+        # make a dict linking each coord with each set of possibilities
+        coord_possibilities = { coord : self.possible[ coord[1], coord[0] ] for coord in group["coords"] }
+
+        # Now link each distinct set of possibilities to the coords that hold them
+        distinct_possibilities = {}
+        for coord in coord_possibilities:
+            possible_values = tuple( coord_possibilities[coord] )
+            if not possible_values in distinct_possibilities:
+                distinct_possibilities[possible_values] = []
+            distinct_possibilities[possible_values].append( coord )
+
+        # Now loop through distinct possibilities and if any set of possibilities has the same length
+        # as the number of coords it maps to, and that number is less than the total remaining unsolved cells,
+        # eliminate those possibilities from other cells in the group
+        for values in distinct_possibilities:
+            if ( len(values) == len( distinct_possibilities[values] ) ) and ( len(values) < unsolved ):
+                self.remove_from_complement( group, distinct_possibilities[values], values )
     
     ##### AUXILIARY FUNCTIONS ##################################
     
@@ -156,3 +209,16 @@ class AbstractSudoku:
             frequencies[ len(possibilities) ].append( i )
         
         return coord_sets, frequencies
+
+    # Remove values from all coords in group not included in coords
+    # Params:
+    #   group                       -> Group of cells
+    #   coords                      -> Coordinated that will keep the given values
+    #   values                      -> Values to be removed from all coordinates in group not included in coords
+    # Returns:
+    #   None                        -> This function alters the cells in the group
+    def remove_from_complement(self, group, coords, values):
+        for coord in group["coords"]:
+            if not coord in coords:
+                for val in values:
+                    self.remove_possibility(coord, val)
