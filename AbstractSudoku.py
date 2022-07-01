@@ -10,7 +10,7 @@ class AbstractSudoku:
         
     def initialize_sudoku(self, dimension):
         self.dim = dimension
-        self.values = [ i+1 for i in range(self.dim) ]
+        self.values = set([ i+1 for i in range(self.dim) ])
         
         # Grids for the puzzle itself
         self.grid = np.zeros( (self.dim, self.dim) ).astype(int)
@@ -109,7 +109,7 @@ class AbstractSudoku:
         coord_sets, frequencies = self.get_frequencies( group )
 
         for freq in frequencies:
-            if freq >= unsolved:
+            if freq >= unsolved or freq == 0:
                 continue
 
             for values in itertools.combinations( frequencies[freq], freq ):
@@ -169,6 +169,12 @@ class AbstractSudoku:
             if ( len(values) == len( distinct_possibilities[values] ) ) and ( len(values) < unsolved ):
                 self.remove_from_complement( group, distinct_possibilities[values], values )
     
+    def apply_group_functions(self):
+        for group_type in self.groups:
+            for group in self.groups[group_type]:
+                for func in group["functions"]:
+                    func(group)
+
     ##### AUXILIARY FUNCTIONS ##################################
     
     # Given a group and value, return the set of all coordinates in group
@@ -222,3 +228,6 @@ class AbstractSudoku:
             if not coord in coords:
                 for val in values:
                     self.remove_possibility(coord, val)
+    
+    def is_solved(self):
+        return np.all( self.solved )

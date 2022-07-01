@@ -1,5 +1,6 @@
 import unittest
 from AbstractSudoku import AbstractSudoku
+from Kropki import Kropki
 
 # Test methods in LogicPuzzle
 class AbstractSudokuTest(unittest.TestCase):
@@ -213,6 +214,88 @@ class AbstractSudokuTest(unittest.TestCase):
 
 class RelationalSudokuTest(unittest.TestCase):
     pass
+
+class KropkiTest(unittest.TestCase):
+
+    def test_factor_two(self):
+        puzzle = Kropki(5)
+
+        assert( puzzle.factor_two(1) == set([2]) )
+        assert( puzzle.factor_two(2) == set([1,4]) )
+        assert( puzzle.factor_two(3) == set() )
+        assert( puzzle.factor_two(4) == set([2]) )
+        assert( puzzle.factor_two(5) == set() )
+    
+    def test_difference_one(self):
+        puzzle = Kropki(5)
+
+        assert( puzzle.difference_one(1) == set([2]) )
+        assert( puzzle.difference_one(2) == set([1,3]) )
+        assert( puzzle.difference_one(3) == set([2,4]) )
+        assert( puzzle.difference_one(4) == set([3,5]) )
+        assert( puzzle.difference_one(5) == set([4]) )
+
+    def test_black_dot(self):
+        dim = 5
+        puzzle = Kropki(dim)
+        values = set([i+1 for i in range(dim)])
+
+        assert( puzzle.possible[0,0] == values )
+        assert( puzzle.possible[0,1] == values )
+
+        result = puzzle.black_dot((0,0),(1,0))
+
+        assert( result == set( [1,2,4] ) )
+
+    def test_white_dot(self):
+        puzzle = Kropki(5)
+
+        dim = 5
+        puzzle = Kropki(dim)
+        values = set([i+1 for i in range(dim)])
+
+        assert( puzzle.possible[0,0] == values )
+        assert( puzzle.possible[0,1] == values )
+
+        result = puzzle.white_dot((0,0),(1,0))
+
+        assert( result == values )
+
+        puzzle.remove_possibility((1,0), 4)
+        result = puzzle.white_dot((0,0),(1,0))
+
+        assert( result == set([1,2,3,4]) )
+
+        puzzle.remove_possibility((1,0), 2)
+        result = puzzle.white_dot((0,0),(1,0))
+
+        assert( result == set([2,4]) )
+
+        puzzle.remove_possibility((1,0), 1)
+        result = puzzle.white_dot((0,0),(1,0))
+
+        assert( result == set([2,4]) )      # Still have 3 adjacent to 2
+
+    def test_blank_relation(self):
+        dim = 5
+        puzzle = Kropki(dim)
+
+        puzzle.possible[0,1] = set([2,3])
+        result = puzzle.blank_relation( (0,0), (1,0) )
+
+        assert( result == set([1,5]) )
+
+        puzzle.solve_cell((1,0),3)
+        result = puzzle.blank_relation( (0,0), (1,0) )
+
+        assert( result == set([1,5]) )
+
+        puzzle = Kropki(dim)
+
+        puzzle.solve_cell((1,0),2)
+        result = puzzle.blank_relation( (0,0), (1,0) )
+
+        assert( result == set([5]) )
 
 if __name__ == "__main__":
     unittest.main()
