@@ -1,10 +1,11 @@
+from setuptools import setup
 from AbstractSudoku import AbstractSudoku
 import numpy as np
 
 class Sudoku(AbstractSudoku):
-    def __init__(self, dimension=9, subgrid_shape=(3,3)):
-        super().__init__(dimension)
-        self.initialize_sudoku(dimension, setup_groups=True, subgrid_shape=subgrid_shape)
+    def __init__(self, dimension=9, setup_groups=True, subgrid_shape=(3,3)):
+        super().__init__(dimension, setup_groups=False, subgrid_shape=subgrid_shape)
+        self.initialize_sudoku(dimension, setup_groups=setup_groups, subgrid_shape=subgrid_shape)
     
     def initialize_sudoku(self, dimension, setup_groups=True, subgrid_shape=(3,3)):
         super().initialize_sudoku(dimension, setup_groups=False, subgrid_shape=None)
