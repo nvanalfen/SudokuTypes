@@ -1,14 +1,15 @@
 import numpy as np
 import pandas as pd
 import itertools
+from copy import deepcopy
 
 class AbstractSudoku:
-    def __init__(self, dimension=9):
+    def __init__(self, dimension=9, subgrid_shape=None):
         self.initialize_sudoku(dimension)
         
     ##### SETUP FUNCTIONS ######################################
         
-    def initialize_sudoku(self, dimension):
+    def initialize_sudoku(self, dimension, setup_groups=True, subgrid_shape=None):
         self.dim = dimension
         self.values = set([ i+1 for i in range(self.dim) ])
         
@@ -20,7 +21,9 @@ class AbstractSudoku:
         
         # Groups for things like rows, columns, subgrids, etc
         self.groups = {}
-        self.set_groups()
+
+        if setup_groups:
+            self.set_groups()
 
     def set_possibilities(self):
         for i in range(self.dim):
@@ -32,23 +35,23 @@ class AbstractSudoku:
     def set_groups(self):
         
         # Create the row groups
-        self.groups["row"] = []
+        self.groups["row"] = np.repeat(None, self.dim)
         for i in range(self.dim):
             group = {}
             group["coords"] = set( [ (x,i) for x in range(self.dim) ] )
             group["functions"] = [ self.N_of_N_counts, self.N_of_N_possibilities ]
             group["properties"] = {}
             
-            self.groups["row"].append( group )
+            self.groups["row"][i] = group
         
-        self.groups["column"] = []
+        self.groups["column"] = np.repeat(None, self.dim)
         for i in range(self.dim):
             group = {}
             group["coords"] = set( [ (i,y) for y in range(self.dim) ] )
             group["functions"] = [ self.N_of_N_counts, self.N_of_N_possibilities ]
             group["properties"] = {}
             
-            self.groups["column"].append( group )
+            self.groups["column"][i] = group
 
     # Load grid with pre-solved cells
     # This function does not read a grid from a file, but turns a read grid into a puzzle
@@ -79,7 +82,7 @@ class AbstractSudoku:
         # Remove value from the possibilities of all other cells in a group containing
         # the cell being set
         for key in self.groups:
-            groups = self.groups[key]
+            groups = self.groups[key].flatten()
             for group in groups:
                 if not coord in group["coords"]:
                     continue
@@ -171,9 +174,35 @@ class AbstractSudoku:
     
     def apply_group_functions(self):
         for group_type in self.groups:
-            for group in self.groups[group_type]:
+            for group in self.groups[group_type].flatten():
                 for func in group["functions"]:
                     func(group)
+
+    # If a value appears N times (1-3 in this case) in group1 (row, column, subgrid) as possibilities,
+    # and all N of those occurances also exist in group2, remove all other
+    # instances of these values grom group2 (other than those also in group1)
+    # e.g. if 2 appears three times in a subgrid, and all three of those exist in row 2,
+    # then remove all other instances of 2 from row2 (force the row)
+    def force_group(self, group, group_type):
+        # Get the set of coordinates where each value exists as a possibility
+        possible_coords = { value : self.get_possibility_coords(group, value) for value in self.values }
+
+        for other_group_type in self.groups:
+            if other_group_type == group_type:
+                continue
+
+            for group2 in self.groups[other_group_type]:
+                # For each other group, get the set of coordinates where each value exists as a possibility
+                possible_coords2 = { value : self.get_possibility_coords(group2, value) for value in self.values }
+
+                # For each value, if the coords in group1 are a subset of those in group2, remove the complement from group2
+                for val in possible_coords:
+                    coords1 = possible_coords[val]
+                    coords2 = possible_coords2[val]
+
+                    if coords1 == coords1 & coords2:
+                        self.remove_from_complement(group2, coords1, [val])
+
 
     ##### AUXILIARY FUNCTIONS ##################################
     
@@ -229,5 +258,55 @@ class AbstractSudoku:
                 for val in values:
                     self.remove_possibility(coord, val)
     
+    def basic_loop(self):
+        self.apply_group_functions()
+
+    def solve(self, debug=False):
+        changed = True
+
+        while changed:
+            changed = False
+
+            pre_grid = deepcopy( self.grid )
+            pre_possible = deepcopy( self.possible )
+
+            if debug:
+                self.write_log("Pre")
+
+            self.basic_loop()
+
+            if debug:
+                self.write_log("Post")
+
+            changed = changed or ( not ( np.all( self.grid == pre_grid ) ) )
+            changed = changed or ( not ( np.all( self.possible == pre_possible ) ) )
+
+        if self.is_solved():
+            print("Success!")
+        else:
+            print("Not yet...")
+
     def is_solved(self):
         return np.all( self.solved )
+
+    def write_log(self, pre_f_name, grid=None, possible=None):
+        if grid is None:
+            grid = self.grid
+        if possible is None:
+            possible = self.possible
+
+        f = open( "{}_values.txt".format(pre_f_name), "w" )
+        for i in range(self.dim):
+            for j in range(self.dim):
+                f.write(str(grid[i,j]))
+                f.write("\t")
+            f.write("\n")
+        f.close()
+
+        f = open( "{}_possible.txt".format(pre_f_name), "w" )
+        for i in range(self.dim):
+            for j in range(self.dim):
+                f.write(str(possible[i,j]))
+                f.write("\n")
+            f.write("\n>>>>>\n")
+        f.close()

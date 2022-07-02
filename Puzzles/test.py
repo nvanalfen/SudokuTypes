@@ -1,6 +1,10 @@
 import unittest
 from AbstractSudoku import AbstractSudoku
+from Sudoku import Sudoku
 from Kropki import Kropki
+import numpy as np
+import pandas as pd
+import os
 
 # Test methods in LogicPuzzle
 class AbstractSudokuTest(unittest.TestCase):
@@ -117,6 +121,28 @@ class AbstractSudokuTest(unittest.TestCase):
                 assert( len( puzzle.possible[y,x] ) == 7 )
                 assert( not 1 in puzzle.possible[y,x] )
                 assert( not 2 in puzzle.possible[y,x] )
+
+    def test_force_group(self):
+        puzzle = AbstractSudoku(9)
+        group1 = puzzle.groups["row"][2]
+        group2 = puzzle.groups["column"][3]
+        values = set([i+1 for i in range(puzzle.dim)])
+        for x,y in group1["coords"]:
+            if x != 3:
+                puzzle.remove_possibility((x,y), 3)
+
+        # Normally, N_of_N counts would take care of this specific case, but this should have the same effect and should generalize to
+        # when subgrids become relevant (Test again there)
+        puzzle.force_group(group1, "row")
+
+        for row in range(puzzle.dim):
+            for col in range(puzzle.dim):
+                if (col, row) == (3,2):
+                    assert( puzzle.possible[row,col] == values )
+                elif (col, row) in group1["coords"] or (col, row) in group2["coords"]:
+                    assert( puzzle.possible[row,col] == set([1,2,4,5,6,7,8,9]) )
+                else:
+                    assert( puzzle.possible[row,col] == values )
 
     def test_get_possibility_coords(self):
         dim = 9
@@ -296,6 +322,38 @@ class KropkiTest(unittest.TestCase):
         result = puzzle.blank_relation( (0,0), (1,0) )
 
         assert( result == set([5]) )
+
+    def test_solve(self):
+        puzzle = Kropki(6)
+        relations = puzzle.read_relations_from_csv("Puzzles\\Book2.csv")
+        puzzle.load_relations(relations)
+        puzzle.solve()
+        assert( puzzle.is_solved() )
+
+class SudokuTest(unittest.TestCase):
+    def test_setup(self):
+        puzzle = Sudoku()
+
+        assert( len( puzzle.groups ) == 3 )
+        assert( puzzle.groups["subgrid"].shape == (3,3) )
+
+        assert( puzzle.groups["subgrid"][0,0]["coords"] == set( [ (0,0), (1,0), (2,0), (0,1), (1,1), (2,1), (0,2), (1,2), (2,2) ] ) )
+        assert( puzzle.groups["subgrid"][0,1]["coords"] == set( [ (3,0), (4,0), (5,0), (3,1), (4,1), (5,1), (3,2), (4,2), (5,2) ] ) )
+        assert( puzzle.groups["subgrid"][0,2]["coords"] == set( [ (6,0), (7,0), (8,0), (6,1), (7,1), (8,1), (6,2), (7,2), (8,2) ] ) )
+
+        assert( puzzle.groups["subgrid"][1,0]["coords"] == set( [ (0,3), (1,3), (2,3), (0,4), (1,4), (2,4), (0,5), (1,5), (2,5) ] ) )
+        assert( puzzle.groups["subgrid"][1,1]["coords"] == set( [ (3,3), (4,3), (5,3), (3,4), (4,4), (5,4), (3,5), (4,5), (5,5) ] ) )
+        assert( puzzle.groups["subgrid"][1,2]["coords"] == set( [ (6,3), (7,3), (8,3), (6,4), (7,4), (8,4), (6,5), (7,5), (8,5) ] ))
+
+        assert( puzzle.groups["subgrid"][2,0]["coords"] == set( [ (0,6), (1,6), (2,6), (0,7), (1,7), (2,7), (0,8), (1,8), (2,8) ] ) )
+        assert( puzzle.groups["subgrid"][2,1]["coords"] == set( [ (3,6), (4,6), (5,6), (3,7), (4,7), (5,7), (3,8), (4,8), (5,8) ] ) )
+        assert( puzzle.groups["subgrid"][2,2]["coords"] == set( [ (6,6), (7,6), (8,6), (6,7), (7,7), (8,7), (6,8), (7,8), (8,8) ] ) )
+
+    def test_solve(self):
+        puzzle = Sudoku(9)
+        grid = puzzle.read_grid_from_csv("Puzzles\\Book1.csv")
+        puzzle.load_grid(grid)
+        puzzle.solve()
 
 if __name__ == "__main__":
     unittest.main()

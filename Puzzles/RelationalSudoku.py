@@ -1,6 +1,7 @@
 from AbstractSudoku import AbstractSudoku
 import numpy as np
 import pandas as pd
+from copy import deepcopy
 
 class RelationalSudoku(AbstractSudoku):
     def __init__(self, dimension=9):
@@ -72,21 +73,7 @@ class RelationalSudoku(AbstractSudoku):
             for value in prior - remainder:
                 self.remove_possibility( coord1, value )
 
-    def solve(self):
-        changed = True
-
-        while changed:
-            changed = False
-            pre_grid = np.array( self.grid )
-            pre_possible = np.array( self.possible )
-
-            self.apply_group_functions()
-            self.apply_relations()
-
-            changed = changed or ( not ( np.all( self.grid == pre_grid ) ) )
-            changed = changed or ( not ( np.all( self.possible == pre_possible ) ) )
-
-        if self.is_solved():
-            print("Success!")
-        else:
-            print("Not yet...")
+    def basic_loop(self):
+        self.apply_group_functions()
+        self.apply_relations()
+    
