@@ -49,7 +49,7 @@ class KenKen(Sudoku):
                 if not key in self.blobs:
                     self.blobs[key] = {}
                     self.blobs[key]["coords"] = []
-                    self.blobs[key]["functions"] = []
+                    self.blobs[key]["functions"] = [ self.cull_possibilities ]
                     self.blobs[key]["properties"] = {}
                 
                 self.blobs[key]["coords"].append( (col, row) )
@@ -115,19 +115,31 @@ class KenKen(Sudoku):
 
     # For all possible permutations of possibilities in a group, return only those
     # That are possible with the total and arithmetic operation needed
-    def cull_combos(self, group):
-        operation = group["properties"]["operation"]
-        total = group["properties"]["total"]
+    def cull_combos(self, possible_combos, operation, total):
 
         combos = []
-        possible_combos = []
-        self.get_permutations( group, 0, [], possible_combos )
         for combo in possible_combos:
             value = operation( combo )
             if value == total and len( set(combo) ) == len(combo):
                 combos.append( combo )
         
         return combos
+    
+    def cull_possibilities(self, group):
+        operation = group["properties"]["operation"]
+        total = group["properties"]["total"]
+
+        combos = []
+        self.get_permutations( group, 0, [], combos )
+        combos = self.cull_combos( combos, operation, total )
+        combos = np.array(combos)
+        culled_sets = [ set( combos[:,i] ) for i in range( combos.shape[1] ) ]
+
+        for i in range(len(group["coords"])):
+            x,y = group["coords"][i]
+
+            if not self.solved[y,x]:
+                self.possible[y,x] &= culled_sets[i]
 
     def map_symbol_to_operation(self, symbol):
         if symbol == "+":

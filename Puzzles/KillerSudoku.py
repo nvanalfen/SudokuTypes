@@ -1,8 +1,8 @@
-from Sudoku import Sudoku
+from KenKen import KenKen
 import numpy as np
 import pandas as pd
 
-class KillerSudoku(Sudoku):
+class KillerSudoku(KenKen):
     def __init__(self, dimension=6, setup_groups=True, subgrid_shape=(2,3)):
         super().__init__(dimension, setup_groups=False, subgrid_shape=subgrid_shape)
         self.blobs = {}

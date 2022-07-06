@@ -4,8 +4,8 @@ import itertools
 from copy import deepcopy
 
 class AbstractSudoku:
-    def __init__(self, dimension=9, subgrid_shape=None):
-        self.initialize_sudoku(dimension)
+    def __init__(self, dimension=9, setup_groups=True, subgrid_shape=None):
+        self.initialize_sudoku(dimension, setup_groups, subgrid_shape)
         
     ##### SETUP FUNCTIONS ######################################
         

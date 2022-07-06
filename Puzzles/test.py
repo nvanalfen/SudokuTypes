@@ -2,6 +2,7 @@ import unittest
 from AbstractSudoku import AbstractSudoku
 from Sudoku import Sudoku
 from Kropki import Kropki
+from KenKen import KenKen
 import numpy as np
 import pandas as pd
 import os
@@ -354,6 +355,105 @@ class SudokuTest(unittest.TestCase):
         grid = puzzle.read_grid_from_csv("Puzzles\\Book1.csv")
         puzzle.load_grid(grid)
         puzzle.solve()
+
+class KenKenTest(unittest.TestCase):
+    def test_get_permutations(self):
+        puzzle = KenKen(4)
+        group = puzzle.groups["row"][0]
+        i = 0
+        for x,y in group["coords"]:
+            puzzle.possible[y,x] = set( [ (i+1)%5, (i+2)%5 ] )
+            if 0 in puzzle.possible[y,x]:
+                puzzle.possible[y,x].remove(0)
+                puzzle.possible[y,x].add(1)
+            i += 1
+        
+        results = []
+        puzzle.get_permutations(group, 0, [], results)
+
+        assert( len(results) == 16 )
+
+        test_compare = []
+        test_compare.append( [1,2,3,4] )
+        test_compare.append( [1,2,3,1] )
+        test_compare.append( [1,2,4,4] )
+        test_compare.append( [1,2,3,1] )
+        test_compare.append( [1,3,3,4] )
+        test_compare.append( [1,3,3,1] )
+        test_compare.append( [1,3,4,4] )
+        test_compare.append( [1,3,3,1] )
+        test_compare.append( [2,2,3,4] )
+        test_compare.append( [2,2,3,1] )
+        test_compare.append( [2,2,4,4] )
+        test_compare.append( [2,2,3,1] )
+        test_compare.append( [2,3,3,4] )
+        test_compare.append( [2,3,3,1] )
+        test_compare.append( [2,3,4,4] )
+        test_compare.append( [2,3,3,1] )
+
+        for combo in test_compare:
+            assert( combo in results )
+
+        puzzle = KenKen(4)
+        group = puzzle.groups["row"][0]
+        puzzle.solve_cell( (0,0), 2 )
+        results = []
+        puzzle.get_permutations(group, 0, [], results)
+
+        assert( len(results) == 3*3*3 )
+
+    def test_add_all(self):
+        puzzle = KenKen(4)
+        values = [1,3,4,6]
+        assert( puzzle.add_all(values) == 14 )
+    
+    def test_subtract_all(self):
+        puzzle = KenKen(4)
+        values = [8,3,1,2]
+        assert( puzzle.subtract_all(values) == 2 )
+
+    def test_multiply_all(self):
+        puzzle = KenKen(4)
+        values = [1,3,4,6]
+        assert( puzzle.multiply_all(values) == 72 )
+
+    def test_divide_all(self):
+        puzzle = KenKen(4)
+        values = [6,3,2,1]
+        assert( puzzle.divide_all(values) == 1 )
+        values = [40,2,5,2]
+        assert( puzzle.divide_all(values) == 2 )
+
+    def test_cull_combos(self):
+        puzzle = KenKen(6)
+        blob = {}
+        blob["coords"] = [ (0,0), (1,0), (2,0) ]
+        blob["functions"] = []
+        blob["properties"] = { "operation":puzzle.add_all, "total":6 }
+        puzzle.blobs = {"A":blob}
+        puzzle.load_blobs()
+        group = puzzle.groups["arithmetic"][0]
+
+        combos = []
+        puzzle.get_permutations( group, 0, [], combos )
+        assert( len( combos ) == 6*6*6 )
+
+        combos = puzzle.cull_combos( combos, blob["properties"]["operation"], blob["properties"]["total"] )
+        assert( len( combos ) == 3*2*1 )
+
+    def test_cull_possibilities(self):
+        puzzle = KenKen(6)
+        blob = {}
+        blob["coords"] = [ (0,0), (1,0), (2,0) ]
+        blob["functions"] = []
+        blob["properties"] = { "operation":puzzle.add_all, "total":6 }
+        puzzle.blobs = {"A":blob}
+        puzzle.load_blobs()
+        group = puzzle.groups["arithmetic"][0]
+
+        puzzle.cull_possibilities( group )
+        for x,y in group["coords"]:
+            assert( puzzle.possible[y,x] == set([1,2,3]) )
 
 if __name__ == "__main__":
     unittest.main()
