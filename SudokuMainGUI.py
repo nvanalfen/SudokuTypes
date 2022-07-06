@@ -7,18 +7,22 @@ from PyQt5 import QtCore, QtWidgets
 
 from Widgets.FutoshikiWidget import FutoshikiWidget
 from Widgets.KropkiWidget import KropkiWidget
+from Widgets.RelationalSudokuWidget import PuzzleGridWidget
 
 class SudokuMainWindow(QMainWindow):
     def __init__(self):
         super(SudokuMainWindow, self).__init__()
         #self.central_widget = QWidget()
-        #self.puzzle_widget = KropkiWidget(parent=self)
+        self.puzzle_widget = KropkiWidget(parent=self)
         self.mainLayout = QtWidgets.QVBoxLayout()
-        self.central_widget = KropkiWidget(parent=self)
+        self.setLayout(self.mainLayout)
+        self.central_widget = self.puzzle_widget
+        self.central_widget = PuzzleGridWidget(6, relations=["<",">"], vertical_relations=["^","v"], parent=self)
         self.setCentralWidget(self.central_widget)
-        self.central_widget.setGeometry( 50, 50, self.central_widget.width(), self.central_widget.height() )
+        #self.central_widget.setGeometry( 50, 50, self.central_widget.width(), self.central_widget.height() )
 
         self.mainLayout.addWidget(self.central_widget)
+        self.show()
 
         #self.setFixedWidth(centralWidget.width() + 100)
         #self.setFixedHeight(centralWidget.height() + 100)
