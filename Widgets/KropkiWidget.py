@@ -6,7 +6,7 @@ class KropkiWidget(RelationalSudokuWidget):
 
     def solve(self):
         values = {}
-        values["type"] = "Futoshiki"
+        values["type"] = "Kropki"
         values["grid"] = self.puzzle_widget.get_grid()
         values["relations"] = self.puzzle_widget.get_relations()
         self.parent.solve( values )

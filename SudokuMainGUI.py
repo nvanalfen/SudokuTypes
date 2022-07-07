@@ -19,7 +19,7 @@ from Widgets.RelationalSudokuWidget import PuzzleGridWidget
 class SudokuMainWindow(QMainWindow):
     def __init__(self):
         super(SudokuMainWindow, self).__init__()
-        self.puzzle_widget = FutoshikiWidget(parent=self)
+        self.puzzle_widget = KropkiWidget(parent=self)
         self.central_widget = self.puzzle_widget
         self.setCentralWidget(self.central_widget)
 
