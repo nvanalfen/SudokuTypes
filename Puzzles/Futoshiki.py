@@ -8,17 +8,17 @@ class Futoshiki(RelationalSudoku):
 
     # A symbol between two cells represents a relation (function) between the cells
     def map_symbol_to_function(self, symbol):
-        if symbol == ">":
+        if symbol == ">" or symbol.lower() == "v":
             return self.greater_than
-        elif symbol == "<":
+        elif symbol == "<" or symbol == "^":
             return self.less_than
 
     # A symbol between a cell on the left and right (or up and down)
     # may have opposite relations when going right to left (down to up)
     def invert_symbol(self, symbol):
-        if symbol == ">":
+        if symbol == ">" or symbol.lower() == "v":
             return "<"
-        elif symbol == "<":
+        elif symbol == "<" or symbol == "^":
             return ">"
 
     def greater_than(self, coord1, coord2):
@@ -26,6 +26,11 @@ class Futoshiki(RelationalSudoku):
         x2, y2 = coord2
         values1 = self.possible[y1,x1]
         values2 = self.possible[y2,x2]
+
+        if self.solved[y1,x1]:
+            values1 = set( [ self.grid[y1,x1] ] )
+        if self.solved[y2,x2]:
+            values2 = set( [ self.grid[y2,x2] ] )
 
         remaining = set( [ el for el in values1 if el > min(values2) ] )
         return remaining
@@ -35,6 +40,11 @@ class Futoshiki(RelationalSudoku):
         x2, y2 = coord2
         values1 = self.possible[y1,x1]
         values2 = self.possible[y2,x2]
+
+        if self.solved[y1,x1]:
+            values1 = set( [ self.grid[y1,x1] ] )
+        if self.solved[y2,x2]:
+            values2 = set( [ self.grid[y2,x2] ] )
 
         remaining = set( [ el for el in values1 if el < max(values2) ] )
         return remaining

@@ -98,64 +98,8 @@ class PuzzleGridWidget(QGroupBox):
 
         for row in range(len(self.boxes)):
             for column in range(len(self.boxes[row])):
-                if not self.boxes[row,column] is None:
+                if not self.boxes[row,column] is None and grid[row,column] != 0:
                     self.boxes[row,column].setPlainText( str(grid[row,column]) )
-
-class PuzzleWidget(QWidget):
-    def __init__(self, dim, relations=[], vertical_relations=[], parent=None):
-        super(PuzzleGridWidget, self).__init__(parent)
-        self.dim = dim
-
-        self.left_x = 0
-        self.upper_y = 0
-
-        self.relations_options = relations
-        self.relations_options_vertical = vertical_relations
-
-        # Set Widget sizes
-        self.cell_size = 50
-        self.combo_width = 50
-        self.combo_height = 30
-        self.spinner_size = 40
-        self.button_width = 80
-        self.button_height = 30
-        self.spacing = 50
-
-        self.width = ( self.cell_size * self.dim ) + ( self.spacing * (self.dim - 1) )
-        self.height = ( self.cell_size * self.dim ) + ( self.spacing * (self.dim - 1) )
-    
-    def setup_boxes(self):
-        self.boxes = np.repeat( None, self.dim*self.dim ).reshape( (self.dim, self.dim) )
-        self.relation_selectors = np.repeat( None, (2*self.dim - 1)*self.dim ).reshape( (2*self.dim - 1, self.dim) )
-
-        for row in range(self.dim):
-            for column in range(self.dim):
-
-                # Create and place the box
-                self.boxes[row,column] = TextEdit(size=self.cell_size, text="", parent=self.parent)
-                box_field = self.boxes[row,column]
-                xi = ( column * self.cell_size ) + ( column * self.spacing ) + self.start_x
-                yi = ( row * self.cell_size ) + ( row * self.spacing ) + self.start_y
-
-                box_field.setGeometry(QtCore.QRect(xi, yi, self.cell_size, self.cell_size))
-
-                # Create and place horizonal combo boxes
-                if column > 0:
-                    self.relation_selectors[2*row, column-1] = ComboBox(width=min( self.spacing, self.combo_width ), height=self.combo_height, options=self.relations_options, parent=self.parent)
-                    relation = self.relation_selectors[2*row, column-1]
-                    xi = ( column * self.cell_size ) + ( (column-1) * self.spacing )  + int( (self.spacing-self.combo_width)/2 ) +  self.start_x
-                    yi = ( row * self.cell_size ) + ( row * self.spacing ) + int( (self.cell_size-self.combo_height)/2 ) + self.start_y
-
-                    relation.setGeometry(QtCore.QRect(xi, yi, min( self.spacing, self.combo_width ), self.combo_height))
-                if row > 0:
-                    self.relation_selectors[2*row-1, column] = ComboBox(width=self.cell_size, height=self.combo_height, options=self.relations_options_vertical, parent=self.parent)
-                    relation = self.relation_selectors[2*row-1, column]
-
-                    xi = ( column * self.cell_size ) + ( column * self.spacing ) + self.start_x
-                    yi = ( row * self.cell_size ) + ( (row-1) * self.spacing ) + int( (self.spacing-self.combo_height)/2 ) + self.start_y
-
-                    relation.setGeometry(QtCore.QRect(xi, yi, self.cell_size, self.combo_height))
-
 
 class RelationalSudokuWidget(QWidget):
     def __init__(self, dim=6, relations=[], vertical_relations=[], parent=None):
@@ -198,7 +142,10 @@ class RelationalSudokuWidget(QWidget):
         self.update()
     
     def solve(self):
-        pass
+        values = {}
+        values["grid"] = self.puzzle_widget.get_grid()
+        values["relations"] = self.puzzle_widget.get_relations()
+        self.parent.solve( values )
 
     def setup_UI(self):
 
