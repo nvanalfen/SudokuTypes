@@ -1,4 +1,4 @@
-from RelationalSudoku import RelationalSudoku
+from .RelationalSudoku import RelationalSudoku
 
 class Kropki(RelationalSudoku):
     def __init__(self, dimension=9):

@@ -1,4 +1,4 @@
-from KenKen import KenKen
+from .KenKen import KenKen
 import numpy as np
 import pandas as pd
 

@@ -1,5 +1,5 @@
 from setuptools import setup
-from AbstractSudoku import AbstractSudoku
+from .AbstractSudoku import AbstractSudoku
 import numpy as np
 
 class Sudoku(AbstractSudoku):

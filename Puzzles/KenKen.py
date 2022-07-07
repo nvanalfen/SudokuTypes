@@ -1,4 +1,4 @@
-from Sudoku import Sudoku
+from .Sudoku import Sudoku
 import numpy as np
 import pandas as pd
 
