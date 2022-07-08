@@ -13,6 +13,8 @@ from Puzzles.KenKen import KenKen
 from Widgets.FutoshikiWidget import FutoshikiWidget
 from Widgets.KropkiWidget import KropkiWidget
 from Widgets.RelationalSudokuWidget import PuzzleGridWidget
+from Widgets.AbstractSudokuWidget import AbstractSudokuWidget
+from Widgets.SudokuWidget import SudokuWidget
 
 class ManagerWidget(QWidget):
     def __init__(self, central):
@@ -38,6 +40,7 @@ class SudokuMainWindow(QMainWindow):
 
         self.puzzle_type = "Kropki"
         self.puzzle_widget = KropkiWidget(parent=self)
+        #self.puzzle_widget = AbstractSudokuWidget(dim=6, subgrid_shape=(2,3), parent=self)
         self.manager = ManagerWidget( self.puzzle_widget )
 
 
@@ -88,7 +91,8 @@ class SudokuMainWindow(QMainWindow):
             puzzle_type = self.puzzle_type
 
         if puzzle_type == "Sudoku":
-            return Sudoku( dimension=self.puzzle_widget.dim )
+            subgrid = self.puzzle_widget.subgrid_shape
+            return Sudoku( dimension=self.puzzle_widget.dim, subgrid_shape=subgrid )
         if puzzle_type == "Killer Sudoku":
             return KillerSudoku( dimension=self.puzzle_widget.dim )
         if puzzle_type == "KenKen":
@@ -105,7 +109,7 @@ class SudokuMainWindow(QMainWindow):
             puzzle_type = self.puzzle_type
             
         if puzzle_type == "Sudoku":
-            #return SudokuWidget()
+            return SudokuWidget(parent=self)
             pass
         if puzzle_type == "Killer Sudoku":
             #return KillerSudokuWidget()
